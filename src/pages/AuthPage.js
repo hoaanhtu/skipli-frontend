@@ -23,7 +23,7 @@ function AuthPage({ onLoginSuccess }) {
       setMessage('Access code has been sent to your phone number. Please check your messages.');
       setAuthStep(2);
     } catch (error) {
-      setMessage(error.response?.data?.error || 'cannot send access code. Please try again later.');
+      setMessage(error.response?.data?.error || 'cannot send access code. Please try again');
     } finally {
       setIsLoading(false);
     }

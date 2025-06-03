@@ -6,10 +6,10 @@ import { useNavigate } from "react-router-dom";
 
 function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentSearch, setCurrentSearch] = useState(""); // Để giữ lại term khi phân trang
+  const [currentSearch, setCurrentSearch] = useState(""); 
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [searchResults, setSearchResults] = useState([]); // Giả định bạn quản lý kết quả tìm kiếm ở đây
+  const [searchResults, setSearchResults] = useState([]); 
   const [currentPage, setCurrentPage] = useState(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
   const [totalGithubResults, setTotalGithubResults] = useState(0);
@@ -37,7 +37,7 @@ function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
         response.data.total_count > 1000 ? 1000 : response.data.total_count || 0
       );
       setCurrentPage(page);
-      setCurrentSearch(term); // Lưu lại search term hiện tại
+      setCurrentSearch(term); 
     } catch (err) {
       setSearchError(
         err.response?.data?.error || "Lỗi khi tìm kiếm người dùng GitHub."

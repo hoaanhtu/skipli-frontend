@@ -1,5 +1,4 @@
 import React from "react";
-// import { FaHeart, FaRegHeart } from 'react-icons/fa'; // Nếu dùng react-icons
 
 function UserCard({ user, isLiked, onLikeToggle }) {
   const cardStyle = {
