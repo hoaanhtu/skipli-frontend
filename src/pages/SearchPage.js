@@ -1,20 +1,33 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../App";
 import NavigationBar from "../components/NavigationBar";
 import { useNavigate } from "react-router-dom";
 
-function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
+function SearchPage({
+  userProfileData,
+  onLogout,
+  isLoadingProfile,
+  phoneNumber,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentSearch, setCurrentSearch] = useState(""); 
+  const [currentSearch, setCurrentSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [searchResults, setSearchResults] = useState([]); 
+  const [searchResults, setSearchResults] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
   const [totalGithubResults, setTotalGithubResults] = useState(0);
+  const [likedIds, setLikedIds] = useState(new Set());
 
-  // console.log("likedUsersIds:", userProfileData);
+  console.log("likedUsersIds:", userProfileData);
+
+  useEffect(() => {
+    if (userProfileData?.likedGithubIds) {
+      setLikedIds(new Set(userProfileData.likedGithubIds));
+    }
+  }, [userProfileData]);
+
 
   const handleSearchAPICall = useCallback(async (term, page, perPage) => {
     if (!term.trim()) {
@@ -37,7 +50,7 @@ function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
         response.data.total_count > 1000 ? 1000 : response.data.total_count || 0
       );
       setCurrentPage(page);
-      setCurrentSearch(term); 
+      setCurrentSearch(term);
     } catch (err) {
       setSearchError(
         err.response?.data?.error || "Lỗi khi tìm kiếm người dùng GitHub."
@@ -46,6 +59,32 @@ function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
       setTotalGithubResults(0);
     } finally {
       setIsSearching(false);
+    }
+  }, []);
+
+  const handleLikeGithubUser = useCallback(async (githubUserToToggle) => {
+    if (!phoneNumber) return;
+    const githubId = githubUserToToggle.id;
+    const isCurrentlyLiked = likedIds.has(`${githubId}`);
+    setLikedIds((prevIds) => {
+      const newIds = new Set(prevIds);
+      if (isCurrentlyLiked) newIds.delete(`${githubId}`);
+      else newIds.add(`${githubId}`);
+      return newIds;
+    });
+    try {
+      await axios.post(`${API_BASE_URL}/user/like-github-user`, {
+        phoneNumber: phoneNumber,
+        githubId: `${githubUserToToggle.id}`,
+      });
+    } catch (err) {
+      setLikedIds((prevIds) => {
+        const newIds = new Set(prevIds);
+        if (isCurrentlyLiked) newIds.add(`${githubId}`);
+        else newIds.delete(`${githubId}`);
+        return newIds;
+      });
+      alert(err.response?.data?.error || "Lỗi khi thích/bỏ thích hồ sơ.");
     }
   }, []);
 
@@ -80,6 +119,13 @@ function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
   const handleClickGithubUser = (user) => {
     window.location.href = `/github-profile/${user.id}`;
   };
+
+
+  const checkLikedUser2 = (user) => {
+    // if (!userProfileData || !userProfileData.likedUsersIds) return false;
+    console.log('userrrr', likedIds, user.id, likedIds.has(user.id))
+    return likedIds.has(`${user.id}`);
+  }
 
   return (
     <div>
@@ -178,40 +224,64 @@ function SearchPage({ userProfileData, onLogout, isLoadingProfile }) {
             justifyContent: "center",
           }}
         >
-          {searchResults.map((user) => (
-            // <UserCard
-            //   key={user.id}
-            //   user={user}
-            //   isLiked={likedUsersIds.includes(user.id)}
-            //   onLikeToggle={() => handleLikeGithubUser(user)}
-            // />
-            <div
-              onClick={() => handleClickGithubUser(user)}
-              key={user.id}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                padding: "16px",
-                marginBottom: "12px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-                width: "320px",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              }}
-            >
+          {searchResults.map((user) => {
+            const isLiked = checkLikedUser2(user);
+            // console.log("user:", user, "isLiked:", isLiked);
+            return (
               <div
+                key={user.id}
                 style={{
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                  marginBottom: "4px",
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "16px",
+                  marginBottom: "12px",
+                  border: "1px solid #ccc",
+                  borderRadius: "8px",
+                  backgroundColor: "#f9f9f9",
+                  width: "320px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
               >
-                {user.login}
+                <img
+                  src={user.avatar_url}
+                  alt={`${user.login} avatar`}
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    marginRight: "15px",
+                    border: "1px solid #eee",
+                  }}
+                />
+                <div
+                  onClick={() => handleClickGithubUser(user)}
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "16px",
+                    marginBottom: "4px",
+                  }}
+                >
+                  {user.login}
+                </div>
+                <div style={{ color: "#555" }}>ID: {user.id}</div>
+                <button
+                  onClick={() => handleLikeGithubUser(user)}
+                  style={{
+                    cursor: "pointer",
+                    color: isLiked ? "red" : "#aaa",
+                    fontSize: "24px",
+                    background: "none",
+                    border: "none",
+                    alignSelf: "flex-end",
+                    marginTop: "auto",
+                  }}
+                  title={isLiked ? "unLike" : "Like"}
+                >
+                  {isLiked ? "❤️" : "🤍"}
+                </button>
               </div>
-              <div style={{ color: "#555" }}>ID: {user.id}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {searchResults.length === 0 && currentSearch && !isSearching && (
           <p>No result for "{currentSearch}".</p>

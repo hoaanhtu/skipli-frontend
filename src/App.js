@@ -105,6 +105,7 @@ function App() {
                 setSearchResults={setSearchResults}
                 isLoadingSearch={isLoadingSearch}
                 setIsLoadingSearch={setIsLoadingSearch}
+                phoneNumber={loggedInPhoneNumber}
               />
             ) : (
               <Navigate to="/login" replace />
